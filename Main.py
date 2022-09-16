@@ -303,8 +303,8 @@ while(iter<max_iter):#(norm_sol>sol_tol):
 
             np.savetxt(fname,var, delimiter = ",")
 
-    norm_sol = sse
-    sol_p1[sol_ID] = sol_p2[sol_ID]
+    # norm_sol = sse
+    # sol_p1[sol_ID] = sol_p2[sol_ID]
 
     ic.Plot_func(CFD_res_loc,Plot_loc, num_ves, iter)
 
