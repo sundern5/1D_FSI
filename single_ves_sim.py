@@ -210,29 +210,19 @@ while(tend<=period):#period_counter*period):
 
 max_iter = 4
 
-while(iter<max_iter):#(norm_sol>sol_tol):
-    
-    iter +=1
-    sse = 0
-    tstart = 0.0
-    tend = Deltat
-    
-    if(period_counter>max_cycles):
-        print("ERROR: TOO MANY CYCLES. EXITING. \n")
-        exit() 
-    
-    while (tend<=period):#period_counter*period):
+tstart = 0.0
+tend = Deltat
+
+while (tend<=period):
+
+    iter = 1
+
+    while(iter<max_iter):#period_counter*period):
+
+        iter +=1
 
         solver(tstart,tend,k,period,Arteries,1)
 
-        sol_p1[sol_ID] = Arteries[0].P(0,Arteries[0].Anew[0])       ## ERROR ESTIMATION IS INCORRECT
-        sol_p2[sol_ID] = sol_p1[sol_ID]*rho*g*Lr/cf
-
-        sse =  sse + (sol_p1[sol_ID]-sol_p2[sol_ID])**2
-        tstart = tend      
-        tend = tend+Deltat
-        sol_ID +=1
-        # if(iter == max_iter):
         for i in range(0,1):
             A1 = np.zeros(Arteries[i].N+1)
             A2 = np.zeros(Arteries[i].N+1)
@@ -258,7 +248,7 @@ while(iter<max_iter):#(norm_sol>sol_tol):
 
             np.savetxt(fname,var, delimiter = ",")
 
-    norm_sol = sse
-    sol_p1[sol_ID] = sol_p2[sol_ID]
+    tstart = tend      
+    tend = tend+Deltat     
 
-    ic.Plot_func(CFD_res_loc,Plot_loc, 1, iter)
+ic.Plot_func(CFD_res_loc,Plot_loc, 1, iter)
