@@ -1,7 +1,13 @@
 READ ME
 
-SN_dev1 branch will change the solver method.
+To run the program, adjust the material properties of the vessel and the flow profile (The built in unction will generate a gaussian distribution pulse).
 
-Main branch goes through all time-points every iteration and reduces error through entire time
+The pressures are provided only to be used for BC calculations.
 
-solver will go through every time-point multiple times to reduce error before moving to next time point
+Changes from Main:
+
+1. The solver logic has been changed in sn_dev1. The solver will go through every time-point multiple times to reduce error before moving to next time point.
+
+2. Pressure equations and derivatives have been corrected based on literature.
+
+3. Progress tracker has been added (Based on current simulation time point and end time point).

@@ -19,24 +19,22 @@ import glob
 import side_functions as ic
 from Tube_class import artery
 
-working_loc = "D:\\Blender_project\\1D_FSI\Python_port\\simpliefied_sim\\"              ## location where files to read are stored
+working_loc = "D:\\Blender_project\\1D_FSI\Python_port\\"              ## location where files to read are stored
 
 os.chdir(working_loc)
 
-CFD_res_loc = "D:\\Blender_project\\1D_FSI\\Python_port\\simpliefied_sim\\data"        ## location where results are being stored
+CFD_res_loc = "D:\\Blender_project\\1D_FSI\\Python_port\\data"        ## location where results are being stored
 
 
 filelist = glob.glob(os.path.join(CFD_res_loc, "*"))
 for q in filelist:
     os.remove(q)
 
-Plot_loc = "D:\\Blender_project\\1D_FSI\Python_port\\simpliefied_sim\\figures"            ## location for plots to be stored    
+Plot_loc = "D:\\Blender_project\\1D_FSI\Python_port\\figures"            ## location for plots to be stored    
 
 filelist = glob.glob(os.path.join(Plot_loc, "*"))
 for o in filelist:
     os.remove(o)
-
-
 
 # Various constants ==============================#
 
@@ -104,7 +102,6 @@ def solver(t_start,t_end,k,period,artery,num_ves):
 
         t=t+k
         qLnb = (qLnb+1)%tmstps
-
 
 #######################################################################################
 ######                        START OF MAIN SCRIPT                               ######
@@ -188,8 +185,6 @@ BC_matrix = ic.windkessel(IMP_FLAG,connectivity,terminal_vessel,np.flip(L),np.fl
 # BC_matrix[:,1] *= 30.0
 # BC_matrix[:,2] *= 0.10
 
-#sol.sor06(k1,k2,k3,t_end,num_ves,num_term,num_pts,connectivity, BC_matrix, terminal_vessel, dims)
-
 total_conn = num_ves-num_term
 period = t_end*q/Lr3        # The dimension-less period.
 k      = period/tmstps      # Length of a timestep.
@@ -225,85 +220,8 @@ elif (num_ves>1):
                 var =  artery(dims[i,0],dims[i,1],dims[i,2],curr_d1-1,curr_d2-1,num_pts,0,kvals,np.array([0,0,0]))
                 Arteries.append(var)  
 
-# period_counter =1
-# norm_sol =  1e+6
-# sol_tol = 1e+1
-# tend = Deltat
-
-# sol_p1 = np.zeros(tmstps)
-# sol_p2 = np.zeros(tmstps)
-
-# sol_ID = 0
-
-# while(tend<=6):#period_counter*period):
-
-#     solver(tstart,tend,k,period,Arteries,num_ves) 
-
-#     sol_p1[sol_ID] = Arteries[0].P(0,Arteries[0].Anew[0])
-#     sol_p1[sol_ID] = sol_p1[sol_ID]*rho*g*Lr/cf     
-
-#     tstart = tend
-#     tend = tend+Deltat
-#     sol_ID +=1
-#     f = open("test.txt", "a")
-#     f.write(str(tstart) + "\n")
-#     f.close()
-
-# print("initial solver done")
-# iter = 1
-# max_iter = 3
-# while(iter<max_iter):#(norm_sol>sol_tol):
-#     iter +=1
-#     sse = 0
-#     tstart = 0.0
-#     tend = Deltat
-    
-#     if(period_counter>max_cycles):
-#         print("ERROR: TOO MANY CYCLES. EXITING. \n")
-#         exit() 
-    
-#     while (tend<=6):#period_counter*period):
-
-#         solver(tstart,tend,k,period,Arteries,num_ves)
-
-#         sol_p1[sol_ID] = Arteries[0].P(0,Arteries[0].Anew[0])
-#         sol_p2[sol_ID] = sol_p1[sol_ID]*rho*g*Lr/cf
-
-#         sse =  sse + (sol_p1[sol_ID]-sol_p2[sol_ID])**2
-#         tstart = tend      
-#         tend = tend+Deltat
-#         sol_ID +=1
-#         # if(iter == max_iter):
-#         for i in range(0,num_ves):
-#             A1 = np.zeros(Arteries[i].N+1)
-#             A2 = np.zeros(Arteries[i].N+1)
-#             A3 = np.zeros(Arteries[i].N+1)
-#             A4 = np.zeros(Arteries[i].N+1)
-#             A5 = np.zeros(Arteries[i].N+1)
-#             A6 = np.zeros(Arteries[i].N+1)
-
-#             for j in range(0,Arteries[i].N+1):
-#                 A1[j] = tend*Lr3/q
-#                 A2[j] = Lr*j*Arteries[i].h
-#                 A3[j] = (Arteries[i].P(j,Arteries[i].Anew[j])+p0)*rho*g*Lr/cf
-#                 A4[j] = q*Arteries[i].Qnew[j]
-#                 A5[j] = Lr2*Arteries[i].Anew[j]
-#                 A6[j] = Arteries[i].c(j,Arteries[i].Anew[j])*Fr2
-
-#             var = np.array([A1,A2,A3,A4,A5,A6])
-#             var = var.T
-
-#             fname = CFD_res_loc + "\\Arteries_" + str(i+1) + "_" + str(int(tstart*100)).zfill(3) + ".csv"
-
-#             np.savetxt(fname,var, delimiter = ",")
-
-#     # norm_sol = sse
-#     # sol_p1[sol_ID] = sol_p2[sol_ID]
-
-#     ic.Plot_func(CFD_res_loc,Plot_loc, num_ves, iter)
-
 iter = 1
-max_iter = 4
+max_iter = 5
 
 tstart = 0.0
 tend = Deltat
@@ -366,7 +284,6 @@ while (tend<=6):
     percent_comp = 100.0*tstart/period
     os.system('cls')
     print(percent_comp)
-
 
 ic.Plot_func(CFD_res_loc,Plot_loc, num_ves, iter)
 # f.close()
