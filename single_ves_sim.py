@@ -1,9 +1,8 @@
 import os
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import glob
-
+import time, sys
 #============================================================#
 #                                                            #
 # Main Code                                                  #
@@ -181,58 +180,36 @@ var = artery(L,Rin,Rout,0,0,num_pts,1,kvals,BC_matrix[0,:])
 
 Arteries.append(var)
 
-period_counter =1
-norm_sol =  1e+6
-sol_tol = 1e+1
+iter = 1
+max_iter = 5
+
+tstart = 0.0
 tend = Deltat
 
-sol_p1 = np.zeros(tmstps)
-sol_p2 = np.zeros(tmstps)
+tol = 1e-8
+er = 100.0            ## arbitrary value greater than tol
 
-sol_ID = 0
-iter = 1
+f = open("test.txt", "a")
 
-while(tend<=period):#period_counter*period):
+while (tend<=period):
 
-    solver(tstart,tend,k,period,Arteries,1) 
+    iter = 1
 
-    sol_p1[sol_ID] = Arteries[0].P(0,Arteries[0].Anew[0])
-    sol_p1[sol_ID] = sol_p1[sol_ID]*rho*g*Lr/cf     
-
-    tstart = tend
-    tend = tend+Deltat
-    sol_ID +=1
-    f = open("test.txt", "a")
-    f.write(str(tstart) + "\n")
-    f.close()
-
-#ic.Plot_func(CFD_res_loc,Plot_loc, 1, iter)
-
-max_iter = 4
-
-while(iter<max_iter):#(norm_sol>sol_tol):
-    
-    iter +=1
-    sse = 0
-    tstart = 0.0
-    tend = Deltat
-    
-    if(period_counter>max_cycles):
-        print("ERROR: TOO MANY CYCLES. EXITING. \n")
-        exit() 
-    
-    while (tend<=period):#period_counter*period):
+    while(er>tol and iter<max_iter):#period_counter*period):
+        
+        #print([tstart,iter])
 
         solver(tstart,tend,k,period,Arteries,1)
 
-        sol_p1[sol_ID] = Arteries[0].P(0,Arteries[0].Anew[0])       ## ERROR ESTIMATION IS INCORRECT
-        sol_p2[sol_ID] = sol_p1[sol_ID]*rho*g*Lr/cf
+        if(iter==1):
+            P_er1 = ((Arteries[0].P(0,Arteries[0].Anew[0]))**2 + (Arteries[0].P(-1,Arteries[0].Anew[-1]))**2)*(rho*g*Lr/cf)**2 
+            er = np.abs(P_er1)
+            #print(er)
+        else:
+            P_er2 = ((Arteries[0].P(0,Arteries[0].Anew[0]))**2 + (Arteries[0].P(-1,Arteries[0].Anew[-1]))**2)*(rho*g*Lr/cf)**2
+            er = np.abs(P_er1-P_er2) 
+            P_er1 = P_er2
 
-        sse =  sse + (sol_p1[sol_ID]-sol_p2[sol_ID])**2
-        tstart = tend      
-        tend = tend+Deltat
-        sol_ID +=1
-        # if(iter == max_iter):
         for i in range(0,1):
             A1 = np.zeros(Arteries[i].N+1)
             A2 = np.zeros(Arteries[i].N+1)
@@ -257,8 +234,19 @@ while(iter<max_iter):#(norm_sol>sol_tol):
             fname = CFD_res_loc + "\\Arteries_" + str(i+1) + "_" + str(int(tstart*100)).zfill(3) + ".csv"
 
             np.savetxt(fname,var, delimiter = ",")
+        
+        iter +=1
+        if(iter>max_iter):
+            f.write(str(tstart) + "\n")
 
-    norm_sol = sse
-    sol_p1[sol_ID] = sol_p2[sol_ID]
+    tstart = tend    
+    tend = tend+Deltat    
 
-    ic.Plot_func(CFD_res_loc,Plot_loc, 1, iter)
+    percent_comp = 100.0*tstart/period
+    os.system('cls')
+    print(percent_comp)
+
+
+ic.Plot_func(CFD_res_loc,Plot_loc, 1, iter)
+f.close()
+os.system('cls')

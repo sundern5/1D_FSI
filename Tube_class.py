@@ -1,6 +1,5 @@
 from turtle import shape
 import numpy as np
-from pandas import array
 #import side_functions as sc
 
 # Various constants ==============================#
@@ -73,7 +72,6 @@ class artery:
         self.cR=0.0
         self.HpR=0.0
 
-
         if self.Q_init==1:
             self.Q_read()
 
@@ -110,10 +108,10 @@ class artery:
                 self.frh[i] = (self.kvals[0]*np.exp(self.kvals[1]*self.r0h[i])+self.kvals[2])*rgLr
                 self.dfrdr0h[i] = (self.kvals[0]*self.kvals[1]*np.exp(self.kvals[1]*self.r0h[i]))*rgLr2
 
-        # self.p1 = self.fr.copy()/np.pi
-        # self.p1h = self.frh.copy()/np.pi
-        # self.dp1dr0 = self.dfrdr0.copy()/np.pi
-        # self.dp1dr0h = self.dfrdr0h.copy()/np.pi
+        self.p1 = self.fr.copy()/np.pi
+        self.p1h = self.frh.copy()/np.pi
+        self.dp1dr0 = self.dfrdr0.copy()/np.pi
+        self.dp1dr0h = self.dfrdr0h.copy()/np.pi
         self.Qnew = np.zeros(self.N+1)
         self.Anew = self.A0.copy()
 
@@ -271,13 +269,11 @@ class artery:
 # to be Period.
     def Q0_init (self,t,k,Period):
         if (t <= Period):
-
             return self.Q0[int(np.interp(t,np.array([0,Period]),np.array([0,np.size(self.Q0)-1])))]
         elif (t >  Period): 
             return (self.Q0_init((t-Period),k,Period))
         else:
             return (0)
-
 
 # The value at the right boundary at time t is predicted. NB: This should
 # only be used with terminal vessels, i.e. for vessels that don't bifurcate
@@ -298,7 +294,6 @@ class artery:
         var = (self.F(Q,A) - A*self.dPdx1(i,A)/Fr2)/(-Q/A - self.c(i,A))
         return var
 
-
 # Update of the left boundary at time t. This function uses Q0 to determine
 # the flow rate at the next time-step. From this the value of A is predicted
 # using Lax-Wendroff's numerical scheme. This function is only relevant
@@ -318,7 +313,6 @@ class artery:
         self.cS = ctm1 + (ctm1  - self.c (1,self.Aold[1]))*ch
         self.HnS = Hntm1 + (Hntm1 - self.Hn(1,self.Qold[1],self.Aold[1]))*ch
 
-
     def bound_left (self,t,k,Period):
         
         self.Qnew[0] = self.Q0_init(t,k,Period)
@@ -329,9 +323,6 @@ class artery:
         self.negchar(k/self.h)
         uS = self.qS/self.aS
         self.Anew[0] = self.aS + (self.Qnew[0] - self.qS)/(uS + self.cS) + k*self.HnS
-
-
-
 
     def poschar (self,theta):
         ctm1  = self.c(self.N, self.Aold[self.N])
@@ -347,7 +338,6 @@ class artery:
         self.aR  = self.Aold[self.N] - (self.Aold[self.N] - self.Aold[self.N-1])*ch
         self.cR  = ctm1 - (ctm1  - self.c(self.N-1,self.Aold[self.N-1]))*ch
         self.HpR = Hptm1 - (Hptm1 - self.Hp(self.N-1,self.Qold[self.N-1],self.Aold[self.N-1]))*ch
-
 
     def bound_right(self,k,theta,t):
         j = 1

@@ -550,9 +550,9 @@ def Plot_func(CFD_res_loc,Plot_loc, num_ves, iter):
 
             t[j] = file_dat[0,0]            ## 1st column is time
 
-            P_prox[j] = file_dat[0,4]           ## 3rd column is pressure rows are along length of tube
-            P_mid[j] = file_dat[int(num_pts/2),4]
-            P_dist[j] = file_dat[-1,4]
+            P_prox[j] = file_dat[0,2]           ## 3rd column is pressure rows are along length of tube
+            P_mid[j] = file_dat[int(num_pts/2),2]
+            P_dist[j] = file_dat[-1,2]
 
             Q_prox[j] = file_dat[0,3]           ## 4th column is flow rate
             Q_mid[j] = file_dat[int(num_pts/2),3]
