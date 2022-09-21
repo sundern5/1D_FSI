@@ -9,7 +9,7 @@ import glob
 # Version 1.0                                                #
 # Ported by Sunder                                           #
 # Description: This is the code to run for the 1D FSI        #
-# problem. THis code is a python version of the MJ colebank  #
+# problem. This code is a python version of the MJ colebank  #
 # code written in MATLAB and C.                              #
 #                                                            #
 #============================================================#
@@ -99,7 +99,6 @@ def solver(t_start,t_end,k,period,artery,num_ves):
                 gamma = k/2
                 ic.bound_bif(artery,i,theta,gamma)
 
-
         t=t+k
         qLnb = (qLnb+1)%tmstps
 
@@ -134,7 +133,6 @@ t_systole = 0.15        # Peak systole time (s)
 t_diastole = 0.4        # Peak diastole time (s)
 
 Qin, tQ = ic.inflow(Qmin,Qmax,t0,t_end,t_systole,t_diastole)
-
 
 # Define pressure profile ====================================#
 
@@ -231,7 +229,7 @@ er = 100.0            ## arbitrary value greater than tol
 
 # f = open("test.txt", "a")
 
-while (tend<=6):
+while (tend<=period):
 
     iter = 1
 
@@ -257,7 +255,6 @@ while (tend<=6):
             A4 = np.zeros(Arteries[i].N+1)
             A5 = np.zeros(Arteries[i].N+1)
             A6 = np.zeros(Arteries[i].N+1)
-            A7 = np.zeros(Arteries[i].N+1)
 
             for j in range(0,Arteries[i].N+1):
                 A1[j] = tend*Lr3/q
@@ -267,7 +264,7 @@ while (tend<=6):
                 A5[j] = Lr2*Arteries[i].Anew[j]
                 A6[j] = Arteries[i].c(j,Arteries[i].Anew[j])*Fr2
 
-            var = np.array([A1,A2,A3,A4,A5,A6,A7])
+            var = np.array([A1,A2,A3,A4,A5,A6])
             var = var.T
 
             fname = CFD_res_loc + "\\Arteries_" + str(i+1) + "_" + str(int(tstart*100)).zfill(3) + ".csv"
