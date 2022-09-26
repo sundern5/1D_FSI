@@ -4,10 +4,15 @@ To run the program, adjust the material properties of the vessel and the flow pr
 
 The pressures are provided only to be used for BC calculations.
 
-Changes from Main:
+Changes 9/21/2022 (From main branch):
 
-1. The solver logic has been changed in sn_dev1. The solver will go through every time-point multiple times to reduce error before moving to next time point.
+1. Main Script changed to FSI 1_D function that takes material stiffness, resistance, and flow profile 
 
-2. Pressure equations and derivatives have been corrected based on literature.
+2. Solver function moved to side_functions.py
 
-3. Progress tracker has been added (Based on current simulation time point and end time point).
+3. Added param_sweep.py as a means to redo the siulation with different values of stiffness/resistance.
+
+4. Added ability to record every n-th step to reduce writing cost.
+
+5. Added param sweep plotter to plot the variation of peak pressure with change in parameters
+

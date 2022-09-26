@@ -1,3 +1,4 @@
+from genericpath import exists
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,19 +24,22 @@ def Plot_func(CFD_res_loc,Plot_loc, num_ves):
 
         for j in range(0,N):
             file_name = CFD_res_loc + "\\Arteries_" + str(i+1) + "_" + str(j).zfill(3) + ".csv"
-            file_dat = np.genfromtxt(file_name,dtype="float",delimiter = ",")
+            if(exists(file_name)):
+                file_dat = np.genfromtxt(file_name,dtype="float",delimiter = ",")
 
-            num_pts = np.shape(file_dat)[0]
+                num_pts = np.shape(file_dat)[0]
 
-            t[j] = file_dat[0,0]            ## 1st column is time
+                t[j] = file_dat[0,0]            ## 1st column is time
 
-            P_prox[j] = file_dat[0,2]           ## 3rd column is pressure rows are along length of tube
-            P_mid[j] = file_dat[int(num_pts/2),2]
-            P_dist[j] = file_dat[-1,2]
+                P_prox[j] = file_dat[0,2]           ## 3rd column is pressure rows are along length of tube
+                P_mid[j] = file_dat[int(num_pts/2),2]
+                P_dist[j] = file_dat[-1,2]
 
-            Q_prox[j] = file_dat[0,3]           ## 4th column is flow rate
-            Q_mid[j] = file_dat[int(num_pts/2),3]
-            Q_dist[j] = file_dat[-1,3]
+                Q_prox[j] = file_dat[0,3]           ## 4th column is flow rate
+                Q_mid[j] = file_dat[int(num_pts/2),3]
+                Q_dist[j] = file_dat[-1,3]
+            else:
+                continue
 
         var = np.array([t,P_prox,P_mid,P_dist,Q_prox,Q_mid,Q_dist])
         var = var.T

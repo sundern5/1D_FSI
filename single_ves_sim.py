@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
-import time, sys
+
 #============================================================#
 #                                                            #
 # Main Code                                                  #
@@ -36,7 +36,7 @@ filelist = glob.glob(os.path.join(Plot_loc, "*"))
 for f in filelist:
     os.remove(f)
 
-    # Various constants ==============================#
+# Various constants ==============================#
 
 cf = 1332.22                # Conversion factor from mmHg to g/cm/s^2
 g = 981.0                     # Gravitational constant (g/cm^2)

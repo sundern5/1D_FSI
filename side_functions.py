@@ -1,4 +1,5 @@
 from cmath import exp
+from genericpath import exists
 import os
 import numpy as np
 import scipy.optimize as sc
@@ -255,6 +256,49 @@ def ludcmp(a,n,indx,d):
         a[i,j] = a[i,j]*dum
   return a
 
+# The Solver function ==============================#
+
+# k is the time step at each iteration
+
+def solver(t_start,t_end,k,period,artery,num_ves):
+
+    t = t_start
+    qLnb = (t/k)%tmstps
+
+    while t<t_end:
+
+        if(t+k>t_end):          # Check if stepping through time takes it past the end time       
+            k = t_end-t         # update the step time to mathc the time bounds
+
+        for i in range(0,num_ves):
+            if(k>artery[i].CFL()):
+                print(t)
+                print(k)
+                print(artery[i].CFL())
+                print("Step size too large, exiting\n")
+                exit() 
+
+        for i in range(0,num_ves):          
+            artery[i].step(k)
+                   
+        artery[0].bound_left(t+k,k,period)
+        #print(Arteries[0].Anew[0]/Arteries[0].Anew[0])
+
+        # f = open("Q0.txt", "a")
+        # f.write(str(t+k) + "," + str(q*artery[0].Qnew[0]) + "\n")
+        # f.close()
+
+        for i in range(0,num_ves):
+            if(artery[i].branch1==0):
+                artery[i].bound_right(k,k/artery[i].h,t)
+               
+            else:
+                theta = k/artery[i].h
+                gamma = k/2
+                bound_bif(artery,i,theta,gamma)
+
+        t=t+k
+        qLnb = (qLnb+1)%tmstps
 
 # Takes one step with Newton Raphson's method. Assumes to find zeros
 # for a multi-dimensional problem.
@@ -517,74 +561,72 @@ def bound_bif(artery,i,theta,gamma):
   artery[artery[i].branch1] = LD
   artery[artery[i].branch2] = RD
 
-
-
   if (j >=ntrial):
       print("arteries.C","Root not found in the bifurcation")
       exit()
 
-def Plot_func(CFD_res_loc,Plot_loc, num_ves, iter):
+def Plot_func(CFD_res_loc,Plot_loc, num_ves):
 
-    fnames = os.listdir(CFD_res_loc)
+  fnames = os.listdir(CFD_res_loc)
 
-    N = int(float(len(fnames))/num_ves)         ## Number of files per vessel
+  N = int(float(len(fnames))/num_ves)         ## Number of files per vessel
 
-    for i in range(0,num_ves):
+  for i in range(0,num_ves):
 
-        t = np.zeros(N)
+      t = np.zeros(N)
 
-        P_prox = np.zeros(N)
-        Q_prox = np.zeros(N)
+      P_prox = np.zeros(N)
+      Q_prox = np.zeros(N)
 
-        P_mid = np.zeros(N)
-        Q_mid = np.zeros(N)
+      P_mid = np.zeros(N)
+      Q_mid = np.zeros(N)
 
-        P_dist = np.zeros(N)
-        Q_dist = np.zeros(N)
+      P_dist = np.zeros(N)
+      Q_dist = np.zeros(N)
 
-        for j in range(0,N):
-            file_name = CFD_res_loc + "\\Arteries_" + str(i+1) + "_" + str(j).zfill(3) + ".csv"
-            file_dat = np.genfromtxt(file_name,dtype="float",delimiter = ",")
+      for j in range(0,N):
+          file_name = CFD_res_loc + "\\Arteries_" + str(i+1) + "_" + fnames[j][-8:-4] + ".csv"
+          file_dat = np.genfromtxt(file_name,dtype="float",delimiter = ",")
 
-            num_pts = np.shape(file_dat)[0]
+          num_pts = np.shape(file_dat)[0]
 
-            t[j] = file_dat[0,0]            ## 1st column is time
+          t[j] = file_dat[0,0]            ## 1st column is time
 
-            P_prox[j] = file_dat[0,2]           ## 3rd column is pressure rows are along length of tube
-            P_mid[j] = file_dat[int(num_pts/2),2]
-            P_dist[j] = file_dat[-1,2]
+          P_prox[j] = file_dat[0,2]           ## 3rd column is pressure rows are along length of tube
+          P_mid[j] = file_dat[int(num_pts/2),2]
+          P_dist[j] = file_dat[-1,2]
 
-            Q_prox[j] = file_dat[0,3]           ## 4th column is flow rate
-            Q_mid[j] = file_dat[int(num_pts/2),3]
-            Q_dist[j] = file_dat[-1,3]
+          Q_prox[j] = file_dat[0,3]           ## 4th column is flow rate
+          Q_mid[j] = file_dat[int(num_pts/2),3]
+          Q_dist[j] = file_dat[-1,3]
 
-        var = np.array([t,P_prox,P_mid,P_dist,Q_prox,Q_mid,Q_dist])
-        var = var.T
-        dat_name = Plot_loc+'\\Artery_'+str(i+1)+'.csv'
-        np.savetxt(dat_name,var, delimiter = ",")
-        
-        fig, axs = plt.subplots(2, 2, figsize=(20, 10))
+      var = np.array([t,P_prox,P_mid,P_dist,Q_prox,Q_mid,Q_dist])
+      var = var.T
+      dat_name = Plot_loc+'\\Artery_'+str(i+1)+'.csv'
+      np.savetxt(dat_name,var, delimiter = ",")
+      
+      fig, axs = plt.subplots(2, 2, figsize=(20, 10))
 
-        plt.rcParams.update({'font.size': 22})
-        plt.subplot(1,2,1)
-        plt.plot(t,P_prox,'-b')
-        plt.plot(t,P_mid,'-r')
-        plt.plot(t,P_dist, '-g')
-        plt.rcParams.update({'font.size': 22})
-        plt.xlabel("time")
-        plt.ylabel("Pressure (mmHg)")
-        plt.legend(['Proximal', 'Mid', 'Distal'])
-        plt.rcParams.update({'font.size': 22})
+      plt.rcParams.update({'font.size': 22})
+      plt.subplot(1,2,1)
+      plt.plot(t,P_prox,'-b')
+      plt.plot(t,P_mid,'-r')
+      plt.plot(t,P_dist, '-g')
+      plt.rcParams.update({'font.size': 22})
+      plt.xlabel("time")
+      plt.ylabel("Pressure (mmHg)")
+      plt.legend(['Proximal', 'Mid', 'Distal'])
+      plt.rcParams.update({'font.size': 22})
 
-        plt.subplot(1,2,2)
-        plt.plot(t,Q_prox, '-b')
-        plt.plot(t,Q_mid, '-r')
-        plt.plot(t,Q_dist, '-g')
-        plt.rcParams.update({'font.size': 22})
-        plt.xlabel("time")
-        plt.ylabel("Flow rate (ml/s)")
-        plt.legend(['Proximal', 'Mid', 'Distal'])
+      plt.subplot(1,2,2)
+      plt.plot(t,Q_prox, '-b')
+      plt.plot(t,Q_mid, '-r')
+      plt.plot(t,Q_dist, '-g')
+      plt.rcParams.update({'font.size': 22})
+      plt.xlabel("time")
+      plt.ylabel("Flow rate (ml/s)")
+      plt.legend(['Proximal', 'Mid', 'Distal'])
 
-        filename = Plot_loc+'\\Artery_'+str(i+1)+'_'+str(iter)+'.png'
-        plt.savefig(filename)
-        plt.close()
+      filename = Plot_loc+'\\Artery_'+str(i+1)+'.png'
+      plt.savefig(filename)
+      plt.close()

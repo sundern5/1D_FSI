@@ -77,7 +77,6 @@ class artery:
 
         self.calc_params()
 
-
     def calc_params(self):          # Split up the calculation part to a differnt function
         self.h = 1/(self.grid_pts*Lr)
 
