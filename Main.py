@@ -99,7 +99,10 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
     #     BC_matrix[:,2] *= BC_vals[2]
     
     BC_matrix = ic.windkessel(IMP_FLAG,connectivity,terminal_vessel,np.flip(L),np.flip(Rout),Qin,Pdat,kvals,tQ)
-    BC_matrix = BC_scale*BC_matrix
+    BC_matrix[:,0] *= BC_scale
+    BC_matrix[:,1] *= BC_scale
+    BC_matrix[:,2] *= 1.0/BC_scale
+
 
 # Initialize vessels as objects ==============================#    
     total_conn = num_ves-num_term    
@@ -182,7 +185,7 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
                     for j in range(0,Arteries[i].N+1):
                         A1[j] = tend*Lr3/q
                         A2[j] = Lr*j*Arteries[i].h
-                        A3[j] = (Arteries[i].P(j,Arteries[i].Anew[j]))*rho*g*Lr/cf
+                        A3[j] = (Arteries[i].P(j,Arteries[i].Anew[j]))*rho*g*Lr/cf+12
                         A4[j] = q*Arteries[i].Qnew[j]
                         A5[j] = Lr2*Arteries[i].Anew[j]
                         A6[j] = Arteries[i].c(j,Arteries[i].Anew[j])*Fr2
@@ -204,6 +207,6 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
         os.system('cls')
         print(str(iter_per)+"__"+str(percent_comp))
 
-    # ic.Plot_func(CFD_res_loc,Plot_loc,1)
+    ic.Plot_func(CFD_res_loc,Plot_loc,1)
     os.system('cls')
                

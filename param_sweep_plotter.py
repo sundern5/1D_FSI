@@ -10,13 +10,11 @@ files = os.listdir()
 
 N = len(files)
 
-X = np.array([2.0, 5.0, 10.0, 20.0, 30.0, 40.0, 50.0]) 
-X = X/10.0
+X = np.array([1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,6.0,7.0,8.0,9.0,10.0]) 
 
 P = np.zeros(N)
 
-for i in range(0,N):
-
+for i in range(0,len(files)):  
     os.chdir(wd+files[i])
 
     fnames = os.listdir()
@@ -33,11 +31,12 @@ for i in range(0,N):
 
         t[j] = file_dat[0,0]            ## 1st column is time
         P_prox[j] = file_dat[0,2]           ## 3rd column is pressure rows are along length of tu
-
+    
     P[i] = np.amax(P_prox)
 
     os.chdir(wd)
 
+print(P)
 plt.figure(figsize=(16, 10), dpi=150)
 plt.rcParams.update({'font.size': 22})
 plt.plot(X,P,'-b')

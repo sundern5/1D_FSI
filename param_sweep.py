@@ -14,10 +14,13 @@ from Main import FSI_1D
 
 k1 = 1e+5
 k2 = -25
-k3 = 93+4           #[1e+4, 9e+4, 2e+5, 4e+5, 6e+5, 8e+5, 9e+5]
+#k3 = 9e+4           #[1e+4, 9e+4, 2e+5, 4e+5, 6e+5, 8e+5, 9e+5]
 
-kvals = [k1, k2, k3]       ## supposed elastic parameters for function
+#kvals = [k1, k2, k3]       ## supposed elastic parameters for function
 
+k3_scale = np.array([0.65*3.0])     ## scaling for PH ->3
+
+k3 = 9e+4*k3_scale
 # Define flow waveform ======================================#
 
 # read flow rate from csv file -> Comment out if not provided
@@ -62,15 +65,19 @@ Pdat = np.array([Psys, Pmean, Pdia])
 
 # BC_vals = [b1,b2,b3]          # np.array([b1[i], b2, b3])
 
-BC_scale = [1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,6.0,7.0,8.0,9.0,10.0]       ## scale windkessel BC by the number used
+## scaling for resistance for PH -> 8
+
+BC_scale = 1.0*8.0            #[1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,6.0,7.0,8.0,9.0,10.0]       ## scale windkessel BC by the number used
 # Call FSI code =============================================# 
 
-for i in range(0,len(BC_scale)):
+for i in range(0,len(k3)):
 
     wd = os.getcwd()+"\\"
 
-    res_dir = wd+"\\data\\iter"+str(i)+"\\"
+    res_dir = wd+"\\data\\"#iter_"+str(i).zfill(2)+"\\"
 
-    iter_per = i*100.0/len(BC_scale)
+    iter_per = i*100.0/len(k3)
 
-    FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale[i],iter_per)
+    kvals = [k1, k2, k3[i]]
+
+    FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale,iter_per)
