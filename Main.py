@@ -57,7 +57,7 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
         for f1 in filelist:
             os.remove(f1)
 
-    Plot_loc = wd+ "\\figures"            ## location for plots to be stored    
+    Plot_loc = wd+ "\\figures\\"            ## location for plots to be stored    
 
     if (os.path.exists(Plot_loc)==False):            ## Check for existence of results directory (if true -> clear directory, else -> create the directory)
         os.makedirs(Plot_loc)
@@ -156,7 +156,7 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
 
     ctr = 1               ## Check counter to only write certain iterations
 
-    n_ctr = 2             ## write every n-th step       
+    n_ctr = 5             ## write every n-th step       
 
     while (tend<=period):
 
@@ -174,7 +174,7 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
                 P_er1 = P_er2
 
             if(ctr%n_ctr==0):
-                for i in range(0,1):
+                for i in range(0,num_ves):
                     A1 = np.zeros(Arteries[i].N+1)
                     A2 = np.zeros(Arteries[i].N+1)
                     A3 = np.zeros(Arteries[i].N+1)

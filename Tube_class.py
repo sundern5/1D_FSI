@@ -377,6 +377,7 @@ class artery:
         # since it can't take the function values as arguments.
         if (j >= ntrial):
             print("WARNING (arteries.C): Root not found in the right boundary")
+            print(self.Length)
             self.Anew[self.N] = self.Ah[self.N-1]
             self.Qnew[self.N] = self.Qh[self.N-1]
 

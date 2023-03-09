@@ -18,7 +18,7 @@ k2 = -25
 
 #kvals = [k1, k2, k3]       ## supposed elastic parameters for function
 
-k3_scale = np.array([0.65*3.0])     ## scaling for PH ->3
+k3_scale = np.array([0.65])     ## scaling for PH ->3
 
 k3 = 9e+4*k3_scale
 # Define flow waveform ======================================#
@@ -67,14 +67,14 @@ Pdat = np.array([Psys, Pmean, Pdia])
 
 ## scaling for resistance for PH -> 8
 
-BC_scale = 1.0*8.0            #[1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,6.0,7.0,8.0,9.0,10.0]       ## scale windkessel BC by the number used
+BC_scale = 1         #[1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,6.0,7.0,8.0,9.0,10.0]       ## scale windkessel BC by the number used
 # Call FSI code =============================================# 
 
 for i in range(0,len(k3)):
 
-    wd = os.getcwd()+"\\"
+    wd = "D:\\Blender_project\\1D_FSI\\Python_port\\Grant_sims_3\\"          #os.getcwd()+"\\" 
 
-    res_dir = wd+"\\data\\"#iter_"+str(i).zfill(2)+"\\"
+    res_dir = "D:\\Blender_project\\1D_FSI\\Python_port\\Grant_sims_3\\data\\"  ## os.getcwd()+"\\Data\\"  
 
     iter_per = i*100.0/len(k3)
 
