@@ -1,18 +1,28 @@
 READ ME
 
-To run the program, adjust the material properties of the vessel and the flow profile (The built in unction will generate a gaussian distribution pulse).
+This is the SN_DEV2 version. Planned changes:
 
-The pressures are provided only to be used for BC calculations.
+1.  Implement non-linear material behavior
+    a. Redefine tube class functions P, dPdA and dPdx1
+    b. Redefine tube class functions B, Bh, dBdAh, dBdx1, dBdx1h, d2BdAdxh
+    c. Redefine CFL condition (Not properly done yet)
+    d. Redefine wave speed cnst (same as CFL)
 
-Changes 9/21/2022 (From main branch):
+CURRENT STATUS:
 
-1. Main Script changed to FSI 1_D function that takes material stiffness, resistance, and flow profile 
+1. Non-linear behavior implemented.
 
-2. Solver function moved to side_functions.py
+2. Relevant functions updated (except CFD and cnst)
 
-3. Added param_sweep.py as a means to redo the siulation with different values of stiffness/resistance.
+3. Reduced tolerances in Newton-Raphson method in bifurcation function (currently set to 1e-4)
 
-4. Added ability to record every n-th step to reduce writing cost.
+3. Simulation is stable and runs to completion when fiber terms are not included.
 
-5. Added param sweep plotter to plot the variation of peak pressure with change in parameters
+4. Simulation runs up to 1.5% when fiber terms are included
+
+Next steps:
+
+1. Look into updating bifurcation tolerances.
+
+
 

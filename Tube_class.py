@@ -37,7 +37,7 @@ class artery:
         self.branch1 = D1           # D1 will be an eger that hold the array location of the one of the branching tubes (Different from the C code)
         self.branch2 = D2
         self.grid_pts = pts         # number of grid pos per cm
-        self.kvals = mech_props            # mech props will contain k1,k2,k3 which are the properties of the tube wall 
+        self.kvals = mech_props            # mech props will contain k1,k2,k3,k4 which are the properties of the tube wall 
         self.BC = BC            ## BC contains res1,res2 ,CT
 
         self.Q_init = Q_init
@@ -50,10 +50,6 @@ class artery:
         self.dr0dxh = np.zeros(self.N+2)
         self.A0 = np.zeros(self.N+1)
         self.A0h = np.zeros(self.N+2)
-        self.fr = np.zeros(self.N+1)
-        self.frh = np.zeros(self.N+2)              
-        self.dfrdr0 = np.zeros(self.N+2)  
-        self.dfrdr0h = np.zeros(self.N+2) 
 
         self.Qold = np.zeros(self.N+1)
         self.Aold = np.zeros(self.N+1)
@@ -80,8 +76,8 @@ class artery:
     def calc_params(self):          # Split up the calculation part to a differnt function
         self.h = 1/(self.grid_pts*Lr)
 
-        rgLr  = 4.0/3.0/rho/g/Lr
-        rgLr2 = 4.0/3.0/rho/g/Lr2
+        # rgLr  = 4.0/3.0/rho/g/Lr
+        # rgLr2 = 4.0/3.0/rho/g/Lr2
 
         for i in range(0,self.N+2):             ## I think the h suffixes are half steps
             if i!=self.N+1:
@@ -94,23 +90,11 @@ class artery:
                 self.A0[i] = np.pi*((self.r0[i])**2)          ## cross-sectional area at length l
                 self.A0h[i] = np.pi*((self.r0h[i])**2)
             
-                self.fr[i] = (self.kvals[0]*np.exp(self.kvals[1]*self.r0[i])+self.kvals[2])*rgLr            ## mechanical properties at length l
-                self.frh[i] = (self.kvals[0]*np.exp(self.kvals[1]*self.r0h[i])+self.kvals[2])*rgLr
-            
-                self.dfrdr0[i] = (self.kvals[0]*self.kvals[1]*np.exp(self.kvals[1]*self.r0[i]))*rgLr2           ## derivative of fr wrt r
-                self.dfrdr0h[i] = (self.kvals[0]*self.kvals[1]*np.exp(self.kvals[1]*self.r0h[i]))*rgLr2
-
             elif i==self.N+1:
                 self.r0h[i] = self.top_radius*np.exp((i-0.5)*np.log(self.bottom_radius/self.top_radius)/self.N)/Lr
                 self.dr0dxh[i] = np.log(self.bottom_radius/self.top_radius)/self.h/self.N*self.r0h[i] 
                 self.A0h[i] = np.pi*(self.r0h[i])**2
-                self.frh[i] = (self.kvals[0]*np.exp(self.kvals[1]*self.r0h[i])+self.kvals[2])*rgLr
-                self.dfrdr0h[i] = (self.kvals[0]*self.kvals[1]*np.exp(self.kvals[1]*self.r0h[i]))*rgLr2
 
-        self.p1 = self.fr.copy()/np.pi
-        self.p1h = self.frh.copy()/np.pi
-        self.dp1dr0 = self.dfrdr0.copy()/np.pi
-        self.dp1dr0h = self.dfrdr0h.copy()/np.pi
         self.Qnew = np.zeros(self.N+1)
         self.Anew = self.A0.copy()
 
@@ -137,7 +121,7 @@ class artery:
     def CFL(self):
         minimum = 64000000.0
         for i in range(0,self.N+1):
-            c_tmp = np.sqrt(0.5*self.fr[i]*np.sqrt(self.Anew[i]/self.A0[i])/Fr2)
+            c_tmp = np.sqrt(0.5*75.0*np.sqrt(self.Anew[i]/self.A0[i])/Fr2)
             Vnew = self.Qnew[i]/self.Anew[i]
             temp = np.min([self.h/np.abs(Vnew - c_tmp), self.h / np.abs(Vnew + c_tmp)])
             if (temp < minimum):
@@ -145,50 +129,165 @@ class artery:
         return minimum    
 
     def P(self, i, A):
-        pold = self.fr[i]*(1.0-np.sqrt(self.A0[i]/A))  # Linear B
+        alpha = (2.0*self.kvals[1]/3.0)*np.exp(self.kvals[2]*((A**2/(self.A0[i]**2))*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2-1)**2)
+        beta = 5.0*(np.sin(self.kvals[3]))**2-(A/self.A0[i])*(np.cos(self.kvals[3]))**2
+        gamma = (A**2/self.A0[i]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2
+
+        pold = self.kvals[0]*(1-self.A0[i]/A)+alpha*beta*gamma
+        #print("P="+str(pold)) 
         return pold
 
     def dPdA(self,i,A):
-        pold = 0.5*self.fr[i]*np.sqrt(self.A0[i])/np.sqrt(A**3)  # Linear B
+        alpha = (2.0*self.kvals[1]/3.0)*np.exp(self.kvals[2]*((A**2/self.A0[i]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2-1)**2)
+        beta = 5.0*(np.sin(self.kvals[3]))**2-(A/self.A0[i])*(np.cos(self.kvals[3]))**2
+        gamma = (A**2/self.A0[i]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2
+
+        trm1 = self.kvals[0]*self.A0[i]/(A**2)  
+        trm2 = alpha*beta*gamma*(4.0*self.kvals[2]*((A**2/self.A0[i]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2-1)\
+                                       *((A/self.A0[i]**2)*(np.cos(self.kvals[3]))**2))
+        trm3 = -alpha*gamma*((1/self.A0[i])*(np.cos(self.kvals[3]))**2)
+        trm4 = alpha*beta*((2*A/self.A0[i])*(np.cos(self.kvals[3]))**2)
+
+        pold = trm1+trm2+trm3+trm4
+        #print("dPdA="+str(pold)) 
         return pold
 
     def dPdx1(self,i,A):
-        pold = (self.dfrdr0[i]*(1-np.sqrt(self.A0[i]/A))+self.fr[i]*np.sqrt(np.pi*self.A0[i])/A)*self.dr0dx[i]  # Linear B
+        alpha = (2.0*self.kvals[1]/3.0)*np.exp(self.kvals[2]*((A**2/self.A0[i]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2-1)**2)
+        beta = 5.0*(np.sin(self.kvals[3]))**2-(A/self.A0[i])*(np.cos(self.kvals[3]))**2
+        gamma = (A**2/self.A0[i]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2
+
+        trm1 = -(2.0*self.kvals[0]*np.pi*np.sqrt(self.A0[i])/A)*self.dr0dx[i] 
+        trm2 = -alpha*beta*gamma*(8.0*self.kvals[2]*((A**2/self.A0[i]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2-1)\
+                                       *((A**2*np.sqrt(np.pi)/self.A0[i]**(2.5))*(np.cos(self.kvals[3]))**2))
+        trm3 = +alpha*gamma*((2*A*np.sqrt(np.pi)/self.A0[i]**(1.5))*(np.cos(self.kvals[3]))**2)
+        trm4 = -alpha*beta*((4*A**2*np.sqrt(np.pi)/self.A0[i]**(2.5))*(np.cos(self.kvals[3]))**2)
+
+        pold = trm1+trm2+trm3+trm4
+        #print("dPdx1="+str(pold)) 
         return pold
 
     def B(self,i,A):
-        pold = self.fr[i]*(np.sqrt((A**3)/self.A0[i])-self.A0[i])/Fr2/3.0  # Linear B
+
+        trm1 = A*self.P(i,A)
+
+        trm2 = -(self.kvals[0]*np.sqrt(np.pi)/rho)*self.A0[i]#*(A-self.A0[i]+np.log(self.A0[i]/A))
+
+        trm3 = 0
+
+        if(A!=self.A0[i]):
+            a = np.linspace(self.A0[i],A,num=101)
+            dA = a[1]-a[0]
+
+            for j in range(0,101):
+                trm3 -= self.P(i,a[j])*dA
+
+        pold = trm1+trm2+trm3
+        #print("B="+str(pold)) 
         return pold
 
     def Bh(self,i,A):
         ip1 = i+1
-        pold = self.frh[ip1]*(np.sqrt((A**3)/self.A0h[ip1])-self.A0h[ip1])/Fr2/3.0  # Linear B
+
+        alpha = (2.0*self.kvals[1]/3.0)*np.exp(self.kvals[2]*((A**2/(self.A0h[ip1]**2))*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2-1)**2)
+        beta = 5.0*(np.sin(self.kvals[3]))**2-(A/self.A0h[ip1])*(np.cos(self.kvals[3]))**2
+        gamma = (A**2/self.A0h[ip1]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2
+
+        trm1 = A*self.kvals[0]*(1-self.A0h[ip1]/A)#+alpha*beta*gamma 
+
+        trm2 = -(self.kvals[0]*np.sqrt(np.pi)/rho)*self.A0h[ip1]#*(A-self.A0h[ip1]+np.log(self.A0h[ip1]/A))
+
+        trm3 = 0
+        
+        if(A!=self.A0h[ip1]):
+            a = np.linspace(self.A0h[ip1],A,num=101)
+            dA = a[1]-a[0]
+            for j in range(0,101):
+                trm3 -= self.P(i,a[j])*dA
+
+        pold = trm1+trm2+trm3
+        #print("Bh="+str(pold)) 
         return pold
 
     def dBdx1(self,i,A):
-        dfr = self.dfrdr0[i]
-        eval = 2.0*np.pi*self.r0[i]*self.fr[i]+self.A0[i]*dfr
-        pold = self.dr0dx[i]*(2.0*np.sqrt((A**3))*(np.sqrt(np.pi)*self.fr[i]-np.sqrt(self.A0[i])*dfr)/self.A0[i]/3.0 \
-         + A*dfr - eval/3.0)/Fr2 # Linear B
+
+        pold = (A/rho)*self.dPdx1(i,A)
+        #print("dBdx1="+str(pold)) 
+
         return pold
 
     def dBdx1h(self,i,A):
         ip1 = i+1
-        dfr = self.dfrdr0h[ip1]
-        eval = 2.0*np.pi*self.r0h[ip1]*self.frh[ip1]+self.A0h[ip1]*dfr
-        pold = self.dr0dxh[ip1]*(2.0*np.sqrt((A**3))*(np.sqrt(np.pi)*self.frh[ip1]-np.sqrt(self.A0h[ip1])*dfr)/self.A0h[ip1]/3.0 \
-            + A*dfr - eval/3.0)/Fr2 # Linear B
+
+        alpha = (2.0*self.kvals[1]/3.0)*np.exp(self.kvals[2]*((A**2/self.A0h[ip1]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2-1)**2)
+        beta = 5.0*(np.sin(self.kvals[3]))**2-(A/self.A0h[ip1])*(np.cos(self.kvals[3]))**2
+        gamma = (A**2/self.A0h[ip1]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2
+
+        trm1 = -(2.0*self.kvals[0]*np.pi*np.sqrt(self.A0h[ip1])/A)*self.dr0dxh[ip1] 
+        trm2 = -alpha*beta*gamma*(8.0*self.kvals[2]*((A**2/self.A0h[ip1]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2-1)\
+                                       *((A**2*np.sqrt(np.pi)/self.A0h[ip1]**(2.5))*(np.cos(self.kvals[3]))**2))
+        trm3 = +alpha*gamma*((2*A*np.sqrt(np.pi)/self.A0h[ip1]**(1.5))*(np.cos(self.kvals[3]))**2)
+        trm4 = -alpha*beta*((4*A**2*np.sqrt(np.pi)/self.A0h[ip1]**(2.5))*(np.cos(self.kvals[3]))**2)
+
+        pold = (A/rho)*(trm1+trm2+trm3+trm4)
+        #print("dBdx1h="+str(pold)) 
         return pold
 
     def dBdAh(self,i,A):
         ip1 = i+1
-        pold = 0.5*self.frh[ip1]*np.sqrt(A/self.A0h[ip1])/Fr2  # Linear B
+
+        alpha = (2.0*self.kvals[1]/3.0)*np.exp(self.kvals[2]*((A**2/self.A0h[ip1]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2-1)**2)
+        beta = 5.0*(np.sin(self.kvals[3]))**2-(A/self.A0h[ip1])*(np.cos(self.kvals[3]))**2
+        gamma = (A**2/self.A0h[ip1]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2
+
+        trm1 = self.kvals[0]*self.A0h[ip1]/(A**2)  
+        trm2 = alpha*beta*gamma*(4.0*self.kvals[2]*((A**2/self.A0h[ip1]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2-1)\
+                                       *((A/self.A0h[ip1]**2)*(np.cos(self.kvals[3]))**2))
+        trm3 = -alpha*gamma*((1/self.A0h[ip1])*(np.cos(self.kvals[3]))**2)
+        trm4 = alpha*beta*((2*A/self.A0h[ip1])*(np.cos(self.kvals[3]))**2)
+
+        pold = (A/rho)*(trm1+trm2+trm3+trm4)
+        #print("dBdAh="+str(pold)) 
         return pold
 
     def d2BdAdxh(self,i,A):
         ip1 = i+1
-        dfr = self.dfrdr0h[ip1]
-        pold = (dfr+np.sqrt(A)*(np.sqrt(np.pi)*self.frh[ip1] - np.sqrt(self.A0h[ip1])*dfr)/self.A0h[ip1])*self.dr0dxh[ip1]/Fr2
+
+        alpha = (2.0*self.kvals[1]/3.0)*np.exp(self.kvals[2]*((A**2/self.A0h[ip1]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2-1)**2)
+        beta = 5.0*(np.sin(self.kvals[3]))**2-(A/self.A0h[ip1])*(np.cos(self.kvals[3]))**2
+        gamma = (A**2/self.A0h[ip1]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2
+
+        delta = (8.0*self.kvals[2]*((A**2/self.A0h[ip1]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2-1)\
+                                       *((A**2*np.sqrt(np.pi)/self.A0h[ip1]**(2.5))*(np.cos(self.kvals[3]))**2))
+
+        trm1 = -(2.0*self.kvals[0]*np.pi*np.sqrt(self.A0h[ip1])/A)
+        trm2 = -alpha*beta*gamma*delta
+        trm3 = +alpha*gamma*((2*A*np.sqrt(np.pi)/self.A0h[ip1]**(1.5))*(np.cos(self.kvals[3]))**2)
+        trm4 = -alpha*beta*((4*A**2*np.sqrt(np.pi)/self.A0h[ip1]**(2.5))*(np.cos(self.kvals[3]))**2)
+
+        trm11 = (2.0*self.kvals[0]*np.pi*np.sqrt(self.A0h[ip1])/A**2)
+
+        trm21 = -alpha*beta*gamma*(8.0*self.kvals[2]*((4.0*A**2/self.A0h[ip1]**2)*(np.cos(self.kvals[3]))**2+2.0*(np.sin(self.kvals[3]))**2)\
+                                       *((A*np.sqrt(np.pi)/self.A0h[ip1]**(2.5))*(np.cos(self.kvals[3]))**2))
+        trm22 = +alpha*gamma*delta*((np.sqrt(np.pi)/self.A0h[ip1])*(np.cos(self.kvals[3]))**2)
+        trm23 = -alpha*beta*delta*((2.0*A*np.sqrt(np.pi)/self.A0h[ip1])*(np.cos(self.kvals[3]))**2)
+        trm24 = -alpha*beta*gamma*delta**2
+        
+        trm31 = +alpha*gamma*((2.0*A*np.sqrt(np.pi)/self.A0h[ip1]**(1.5))*(np.cos(self.kvals[3]))**2)*delta        
+        trm32 = +alpha*gamma*((2*np.sqrt(np.pi)/self.A0h[ip1]**(1.5))*(np.cos(self.kvals[3]))**2)
+        trm33 = +alpha*((2.0*A*np.sqrt(np.pi)/self.A0h[ip1]**(1.5))*(np.cos(self.kvals[3]))**2)\
+                *((2.0*A/self.A0h[ip1]**(2))*(np.cos(self.kvals[3]))**2)
+
+        trm41 = -alpha*beta*((4*A**2*np.sqrt(np.pi)/self.A0h[ip1]**(2.5))*(np.cos(self.kvals[3]))**2)*delta
+        trm42 = -alpha*beta*((8*A*np.sqrt(np.pi)/self.A0h[ip1]**(2.5))*(np.cos(self.kvals[3]))**2)
+        trm43 = +alpha*((4*A**2*np.sqrt(np.pi)/self.A0h[ip1]**(2.5))*(np.cos(self.kvals[3]))**2)*((np.sqrt(np.pi)/self.A0h[ip1])*(np.cos(self.kvals[3]))**2)
+
+        dPdx1h = (1/rho)*(trm1+trm2+trm3+trm4)
+
+        d2PdAdx = (A/rho)*(trm11+trm21+trm22+trm23+trm24+trm31+trm32+trm33+trm41+trm42+trm43)
+
+        pold = (dPdx1h+d2PdAdx)
+        # print("d2BdAdxh="+str(pold)) 
         return pold
 
 # When taking a Lax-Wendroff step, the flux of the system must be determined.
@@ -282,7 +381,7 @@ class artery:
 # cal theory presented in Olufsen, et al., Ann Biomed Eng 28, 1281?1299, 2000.
 
     def c(self, i, A):          # The wave speed through aorta.
-        cnst = np.sqrt(0.5*self.fr[i]*np.sqrt(A/self.A0[i])/Fr2)  #Linear B
+        cnst = np.sqrt(0.5*75.0*np.sqrt(A/self.A0[i])/Fr2)  #Linear B
         return cnst
 
     def Hp (self,i,Q,A):

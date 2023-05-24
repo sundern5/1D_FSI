@@ -5,6 +5,7 @@ import numpy as np
 import scipy.optimize as sc
 import matplotlib.pyplot as plt
 from Tube_class import artery
+from scipy import optimize
 
 
 # Various constants ==============================#
@@ -256,50 +257,6 @@ def ludcmp(a,n,indx,d):
         a[i,j] = a[i,j]*dum
   return a
 
-# The Solver function ==============================#
-
-# k is the time step at each iteration
-
-def solver(t_start,t_end,k,period,artery,num_ves):
-
-    t = t_start
-    qLnb = (t/k)%tmstps
-
-    while t<t_end:
-
-        if(t+k>t_end):          # Check if stepping through time takes it past the end time       
-            k = t_end-t         # update the step time to mathc the time bounds
-
-        for i in range(0,num_ves):
-            if(k>artery[i].CFL()):
-                print(t)
-                print(k)
-                print(artery[i].CFL())
-                print("Step size too large, exiting\n")
-                exit() 
-
-        for i in range(0,num_ves):          
-            artery[i].step(k)
-                   
-        artery[0].bound_left(t+k,k,period)
-        #print(Arteries[0].Anew[0]/Arteries[0].Anew[0])
-
-        # f = open("Q0.txt", "a")
-        # f.write(str(t+k) + "," + str(q*artery[0].Qnew[0]) + "\n")
-        # f.close()
-
-        for i in range(0,num_ves):
-            if(artery[i].branch1==0):
-                artery[i].bound_right(k,k/artery[i].h,t)
-               
-            else:
-                theta = k/artery[i].h
-                gamma = k/2
-                bound_bif(artery,i,theta,gamma)
-
-        t=t+k
-        qLnb = (qLnb+1)%tmstps
-
 # Takes one step with Newton Raphson's method. Assumes to find zeros
 # for a multi-dimensional problem.
 def zero(x,n,tolx,tolf,fvec,fjac):
@@ -318,10 +275,8 @@ def zero(x,n,tolx,tolf,fvec,fjac):
   fjac = ludcmp(fjac, n, indx, d)
   p = lubksb(fjac, n, indx, p)
 
-  errx = 0.0
-  for i in range(0,n):
-    errx = errx + np.abs(p[i])
-    x[i] = x[i] + p[i]
+  errx = np.sum(np.abs(p))
+  x = x+p
 
   if(errx <= tolx):
     return 1, x
@@ -338,6 +293,9 @@ def zero_1d(x,f,df,tolx):
   var = (np.abs(dx) < tolx & np.fabs(f) < tolx)
   return var
 
+
+def func(x,fjac):
+   return fjac@x
 
 # The value at the bifurcation point at time t is predicted. This should
 # only be done for tubes that do bifurcate into further branches. If
@@ -413,7 +371,7 @@ def bound_bif(artery,i,theta,gamma):
 
       fvec = np.zeros(18)
       # The residuals.
-      fvec[0] = g1 - xb[0] - theta*((xb[2]**2)/xb[11] + Art.Bh(Art.N,xb[11])) + gamma*(Art.F(xb[2],xb[11])+Art.dBdx1h(Art.N,xb[11]))
+      fvec[0] = g1 - xb[0] - theta*((xb[2]**2)/xb[11] + Art.Bh(Art.N,xb[11])) + gamma*(Art.F(xb[2],xb[11]) + Art.dBdx1h(Art.N,xb[11]))
 
       fvec[1] = g2 - xb[3] + theta*((xb[5]**2)/xb[14] + LD.Bh(-1,xb[14])) + gamma*(Art.F(xb[5],xb[14])  + LD.dBdx1h(-1,xb[14]))
 
@@ -431,6 +389,9 @@ def bound_bif(artery,i,theta,gamma):
       fvec[12] = -xb[1] + xb[4] + xb[7]
       fvec[13] = -xb[0] + xb[3] + xb[6]
 
+      # if(np.sum(np.abs(fvec))<1e-10):
+      #    break
+         
       PN = Art.P(Art.N,xb[10])
       sq211 = (xb[1]/xb[10])**2
 
@@ -541,13 +502,19 @@ def bound_bif(artery,i,theta,gamma):
       fjac[11,17] = 0.5
 
       # Check whether solution is close enough. If not run the loop again.
-      ch, XB = zero(xb, 18, 1.0e-12, 1.0e-12, fvec, fjac)
+      ch, XB = zero(xb, 18, 1.0e-4, 1.0e-4, fvec, fjac)
       if(ch == 1):
           ok = 'true'
+
+      # XB = optimize.newton(func,xb, args=(fjac,))
 
       xb = XB
 
       j = j+1
+
+  if (j >=ntrial):
+      print("arteries.C","Root not found in the bifurcation")
+      exit()
 
   # Solutions is applied, and right boundary is updated.
   Art.Anew[Art.N] = xb[9]
@@ -561,9 +528,50 @@ def bound_bif(artery,i,theta,gamma):
   artery[artery[i].branch1] = LD
   artery[artery[i].branch2] = RD
 
-  if (j >=ntrial):
-      print("arteries.C","Root not found in the bifurcation")
-      exit()
+
+# The Solver function ==============================#
+
+# k is the time step at each iteration
+
+def solver(t_start,t_end,k,period,artery,num_ves):
+
+    t = t_start
+    qLnb = (t/k)%tmstps
+
+    while t<t_end:
+
+        if(t+k>t_end):          # Check if stepping through time takes it past the end time       
+            k = t_end-t         # update the step time to mathc the time bounds
+
+        for i in range(0,num_ves):
+            if(k>artery[i].CFL()):
+                print(t)
+                print(k)
+                print(artery[i].CFL())
+                print("Step size too large, exiting\n")
+                exit() 
+
+        for i in range(0,num_ves):          
+            artery[i].step(k)
+                   
+        artery[0].bound_left(t+k,k,period)
+        #print(Arteries[0].Anew[0]/Arteries[0].Anew[0])
+
+        # f = open("Q0.txt", "a")
+        # f.write(str(t+k) + "," + str(q*artery[0].Qnew[0]) + "\n")
+        # f.close()
+
+        for i in range(0,num_ves):
+            if(artery[i].branch1==0):
+                artery[i].bound_right(k,k/artery[i].h,t)
+               
+            else:
+                theta = k/artery[i].h
+                gamma = k/2
+                bound_bif(artery,i,theta,gamma)
+
+        t=t+k
+        qLnb = (qLnb+1)%tmstps
 
 def Plot_func(CFD_res_loc,Plot_loc, num_ves):
 
