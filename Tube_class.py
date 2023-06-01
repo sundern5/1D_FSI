@@ -130,6 +130,8 @@ class artery:
 
     def P(self, i, A):
         alpha = (2.0*self.kvals[1]/3.0)*np.exp(self.kvals[2]*((A**2/(self.A0[i]**2))*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2-1)**2)
+        # if(A/self.A0[i]>2):
+        #     print(str(alpha)+'_'+str(A/self.A0[i])+'_'+str(self.Length))
         beta = 5.0*(np.sin(self.kvals[3]))**2-(A/self.A0[i])*(np.cos(self.kvals[3]))**2
         gamma = (A**2/self.A0[i]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2
 
@@ -176,10 +178,10 @@ class artery:
         trm3 = 0
 
         if(A!=self.A0[i]):
-            a = np.linspace(self.A0[i],A,num=101)
+            a = np.linspace(self.A0[i],A,num=21)
             dA = a[1]-a[0]
 
-            for j in range(0,101):
+            for j in range(0,21):
                 trm3 -= self.P(i,a[j])*dA
 
         pold = trm1+trm2+trm3
@@ -193,16 +195,16 @@ class artery:
         beta = 5.0*(np.sin(self.kvals[3]))**2-(A/self.A0h[ip1])*(np.cos(self.kvals[3]))**2
         gamma = (A**2/self.A0h[ip1]**2)*(np.cos(self.kvals[3]))**2+(np.sin(self.kvals[3]))**2
 
-        trm1 = A*self.kvals[0]*(1-self.A0h[ip1]/A)#+alpha*beta*gamma 
+        trm1 = A*self.kvals[0]*(1-self.A0h[ip1]/A)+alpha*beta*gamma 
 
         trm2 = -(self.kvals[0]*np.sqrt(np.pi)/rho)*self.A0h[ip1]#*(A-self.A0h[ip1]+np.log(self.A0h[ip1]/A))
 
         trm3 = 0
         
         if(A!=self.A0h[ip1]):
-            a = np.linspace(self.A0h[ip1],A,num=101)
+            a = np.linspace(self.A0h[ip1],A,num=21)
             dA = a[1]-a[0]
-            for j in range(0,101):
+            for j in range(0,21):
                 trm3 -= self.P(i,a[j])*dA
 
         pold = trm1+trm2+trm3
@@ -358,6 +360,10 @@ class artery:
         for i in range(1,self.N):
             self.Anew[i] = self.Aold[i] - theta*(self.R1h[i]-self.R1h[i-1]) + gamma*(self.S1h[i]+self.S1h[i-1])
             self.Qnew[i] = self.Qold[i] - theta*(self.R2h[i]-self.R2h[i-1]) + gamma*(self.S2h[i]+self.S2h[i-1])
+
+        # if(np.max(self.Anew)/np.max(self.A0)>2):
+        #     print(str(self.Anew))
+        
 
 # The left boundary (x=0) uses this function to model an inflow into
 # the system. The actual parameter given to the function is the model time.

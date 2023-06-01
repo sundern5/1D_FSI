@@ -20,9 +20,12 @@ CURRENT STATUS:
 
 4. Simulation runs up to 1.5% when fiber terms are included
 
+5. Altered bifurcation tolerances.
+
 Next steps:
 
-1. Look into updating bifurcation tolerances.
+1. Replace exponential function with taylor series expansion
+
 
 
 

@@ -29,7 +29,7 @@ ratio = 0.2                 # Windkessel Ratio (R1/RT) when not using Zc impedan
 rho = 1.055                 # Density of blood, assumed constant (g/cm^3)
 mu = 0.049                  # Viscosity of blood [g/cm/s].
 
-tmstps = 20000               # The number of timesteps per period.
+tmstps = 10000               # The number of timesteps per period.
 plts   = 1024                     # Number of plots per period.
 nu     = mu/rho                 # Dynamic viscosity of blood [cm^2/s].
 Lr     = 1.0                    # Characteristic radius of the
@@ -84,7 +84,7 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
 
     num_ves = np.size(L)
     num_term = np.size(terminal_vessel)
-    num_pts  = 8
+    num_pts  = 6
 
 # Specify Windkessel conditions ==============================#
 
@@ -174,13 +174,14 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
                 P_er1 = P_er2
 
             if(ctr%n_ctr==0):
-                for i in range(0,1):
+                for i in range(0,1):#num_ves):
                     A1 = np.zeros(Arteries[i].N+1)
                     A2 = np.zeros(Arteries[i].N+1)
                     A3 = np.zeros(Arteries[i].N+1)
                     A4 = np.zeros(Arteries[i].N+1)
                     A5 = np.zeros(Arteries[i].N+1)
                     A6 = np.zeros(Arteries[i].N+1)
+                    A7 = np.zeros(Arteries[i].N+1)
 
                     for j in range(0,Arteries[i].N+1):
                         A1[j] = tend*Lr3/q
@@ -189,8 +190,10 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
                         A4[j] = q*Arteries[i].Qnew[j]
                         A5[j] = Lr2*Arteries[i].Anew[j]
                         A6[j] = Arteries[i].c(j,Arteries[i].Anew[j])*Fr2
+                        A7[j] = Arteries[i].Anew[j]/Arteries[i].A0[j]
 
-                    var = np.array([A1,A2,A3,A4,A5,A6])
+
+                    var = np.array([A1,A2,A3,A4,A5,A6,A7])
                     var = var.T
 
                     fname = CFD_res_loc + "Arteries_" + str(i+1) + "_" + str(int(tstart*100)).zfill(4) + ".csv"
