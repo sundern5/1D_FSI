@@ -14,17 +14,15 @@ CURRENT STATUS:
 
 2. Relevant functions updated (except CFD and cnst)
 
-3. Reduced tolerances in Newton-Raphson method in bifurcation function (currently set to 1e-4)
+3. Edited functions to make the code work for constant radius.
 
-3. Simulation is stable and runs to completion when fiber terms are not included.
+4. Simulation is stable and runs to completion.
 
-4. Simulation runs up to 1.5% when fiber terms are included
-
-5. Altered bifurcation tolerances.
 
 Next steps:
 
-1. Replace exponential function with taylor series expansion
+1. Store P, B and derivatives as a function of area ratio, then interpolate during calls.
+
 
 
 

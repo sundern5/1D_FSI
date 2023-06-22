@@ -29,7 +29,7 @@ ratio = 0.2                 # Windkessel Ratio (R1/RT) when not using Zc impedan
 rho = 1.055                 # Density of blood, assumed constant (g/cm^3)
 mu = 0.049                  # Viscosity of blood [g/cm/s].
 
-tmstps = 10000               # The number of timesteps per period.
+tmstps = 20000               # The number of timesteps per period.
 plts   = 1024                     # Number of plots per period.
 nu     = mu/rho                 # Dynamic viscosity of blood [cm^2/s].
 Lr     = 1.0                    # Characteristic radius of the
@@ -98,10 +98,11 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
     #     BC_matrix[:,1] *= BC_vals[1]
     #     BC_matrix[:,2] *= BC_vals[2]
     
-    BC_matrix = ic.windkessel(IMP_FLAG,connectivity,terminal_vessel,np.flip(L),np.flip(Rout),Qin,Pdat,kvals,tQ)
-    BC_matrix[:,0] *= BC_scale
-    BC_matrix[:,1] *= BC_scale
-    BC_matrix[:,2] *= 1.0/BC_scale
+    BC_matrix = [1.0,1e-10,1e-10]
+    # BC_matrix = ic.windkessel(IMP_FLAG,connectivity,terminal_vessel,np.flip(L),np.flip(Rout),Qin,Pdat,kvals,tQ)
+    BC_matrix[0] = 1.0*BC_scale
+    # BC_matrix[:,1] *= BC_scale
+    # BC_matrix[:,2] *= 1.0/BC_scale
 
 
 # Initialize vessels as objects ==============================#    
@@ -113,7 +114,7 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
     Arteries = []
 
     if (num_ves==1):
-        var = artery(dims[0,0],dims[0,1],dims[0,2],0,0,num_pts,1,kvals,BC_matrix[0,:])
+        var = artery(dims[0],dims[1],dims[2],0,0,num_pts,1,kvals,BC_matrix)
         Arteries.append(var)
     elif (num_ves>1):
         for i in range(0,num_ves):
@@ -139,7 +140,7 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
 # Start solving time steps ==============================#     
     
     t0 = 0.0        # initial time (s)
-    t_end = 1      # Duration of 1 cardiac cycle (s)
+    t_end = 5      # Duration of 1 cardiac cycle (s)
     
     period = t_end*q/Lr3        # The dimension-less period.
     k      = period/tmstps      # Length of a timestep.
@@ -156,7 +157,7 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
 
     ctr = 1               ## Check counter to only write certain iterations
 
-    n_ctr = 2             ## write every n-th step       
+    n_ctr = 10             ## write every n-th step       
 
     while (tend<=period):
 
@@ -174,7 +175,7 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
                 P_er1 = P_er2
 
             if(ctr%n_ctr==0):
-                for i in range(0,1):#num_ves):
+                for i in range(0,num_ves):
                     A1 = np.zeros(Arteries[i].N+1)
                     A2 = np.zeros(Arteries[i].N+1)
                     A3 = np.zeros(Arteries[i].N+1)
@@ -186,7 +187,7 @@ def FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale, iter_per):
                     for j in range(0,Arteries[i].N+1):
                         A1[j] = tend*Lr3/q
                         A2[j] = Lr*j*Arteries[i].h
-                        A3[j] = (Arteries[i].P(j,Arteries[i].Anew[j]))*rho*g*Lr/cf+12
+                        A3[j] = (Arteries[i].P(j,Arteries[i].Anew[j]))*rho*g*Lr/cf
                         A4[j] = q*Arteries[i].Qnew[j]
                         A5[j] = Lr2*Arteries[i].Anew[j]
                         A6[j] = Arteries[i].c(j,Arteries[i].Anew[j])*Fr2

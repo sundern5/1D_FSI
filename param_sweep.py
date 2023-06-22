@@ -7,13 +7,10 @@ import side_functions as ic
 from Tube_class import artery
 from Main import FSI_1D
 
-# Define vessel mechanical properties =======================# !! NEED TO MODIFY THIS !!
+# Define vessel mechanical properties =======================# 
 
-# Eh/r0 = k1*exp(k2*r0) + k3
-# where E, h, and r0 are the Youngs Modulus, wall thickness, and reference radius, respectively.
-
-k1 = 20.0
-k2 = 1.0
+k1 = 40
+k2 = 5.0
 k3 = 0.08         
 k4 = 55.0*np.pi/180.0
 
@@ -27,8 +24,8 @@ k4 = 55.0*np.pi/180.0
 
 #============================================================#
 
-Qmin = 0        # Min flow rate (ml/s)
-Qmax = 2      # Max flow rate (ml/s)
+Qmin = 20        # Min flow rate (ml/s)
+Qmax = 20    # Max flow rate (ml/s)
 
 t0 = 0.0        # initial time (s)
 t_end = 1       # Duration of 1 cardiac cycle (s)
@@ -65,17 +62,17 @@ Pdat = np.array([Psys, Pmean, Pdia])
 
 ## scaling for resistance for PH -> 8
 
-BC_scale = 1.0           #[1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,6.0,7.0,8.0,9.0,10.0]       ## scale windkessel BC by the number used
+BC_scale = [1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,15.0,20.0,30.0,40.0,50.0]       ## scale windkessel BC by the number used
 # Call FSI code =============================================# 
 
-for i in range(0,1):
+for i in range(0,len(BC_scale)):
 
-    wd = os.getcwd()+"\\retool\\"
+    wd = os.getcwd()+"\\retool\\resistance_variation\\"
 
-    res_dir = wd+"\\data\\"#iter_"+str(i).zfill(2)+"\\"
+    res_dir = wd+"\\data\\iter_"+str(i).zfill(2)+"\\"
 
-    iter_per = 100.0
+    iter_per = 100.0*i/len(BC_scale)
 
     kvals = [k1, k2, k3, k4]
 
-    FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale,iter_per)
+    FSI_1D(wd, res_dir, Qin, tQ, kvals, Pdat, BC_scale[i],iter_per)
